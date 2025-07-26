@@ -4,12 +4,17 @@
 
 1. Go to your Netlify dashboard
 2. Navigate to: Site settings > Environment variables
-3. Add these variables:
+3. Add these variables (WITHOUT the VITE_ prefix for security):
 
 ```
-VITE_GEMINI_API_URL = https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
-VITE_GEMINI_API_KEY = your_actual_api_key_here
+GEMINI_API_URL = https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+GEMINI_API_KEY = [GET_FROM_YOUR_ENV_FILE]
 ```
+
+⚠️ **IMPORTANT SECURITY NOTE**: 
+- Use `GEMINI_API_KEY` (NOT `VITE_GEMINI_API_KEY`) to keep the API key server-side only
+- Replace `[GET_FROM_YOUR_ENV_FILE]` with your actual API key from your local `.env` file
+- The app now uses a Netlify serverless function to securely handle API calls
 
 ## Deployment Steps
 

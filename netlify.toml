@@ -1,6 +1,7 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  functions = "netlify/functions"
 
 [[redirects]]
   from = "/*"
@@ -9,3 +10,6 @@
 
 [build.environment]
   NODE_VERSION = "18"
+
+# Security: Disable secrets scanning for specific paths if needed
+# SECRETS_SCAN_OMIT_PATHS = "dist/**"

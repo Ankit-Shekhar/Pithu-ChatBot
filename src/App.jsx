@@ -67,32 +67,20 @@ function App() {
     setAbortController(controller);
     
     try {
-      // Check if environment variables are loaded
-      const apiUrl = import.meta.env.VITE_GEMINI_API_URL;
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      
-      if (!apiUrl || !apiKey) {
-        throw new Error('Environment variables not loaded. Please check your .env file and restart the development server.');
-      }
-      
-      const requestData = {
-        contents: [{ parts: [{ text: question }] }],
-      };
-      
+      // Use Netlify function instead of direct API call for security
       const response = await axios({
-        url: apiUrl,
+        url: '/.netlify/functions/chat',
         method: "POST",
-        data: requestData,
+        data: { question },
         timeout: 30000, // 30 second timeout
         signal: controller.signal, // Add abort signal
         headers: {
           'Content-Type': 'application/json',
-          'X-goog-api-key': apiKey
         }
       });
       
-      if (response?.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-        const responseText = response['data']['candidates'][0]['content']['parts'][0]['text'];
+      if (response?.data?.success && response?.data?.response) {
+        const responseText = response.data.response;
         setAnswer(responseText);
       } else {
         console.error('Invalid response structure:', response);
@@ -105,9 +93,6 @@ function App() {
     } catch (error) {
       if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
         setAnswer("Request cancelled by user.");
-      } else if (error.message.includes('Environment variables not loaded')) {
-        console.error('Environment variables missing:', error);
-        setAnswer("⚠️ Configuration Error: Environment variables not found. Please check your .env file and restart the development server.");
       } else {
         console.error('Full error object:', error);
         console.error('Error response:', error.response);
@@ -118,7 +103,7 @@ function App() {
         if (error.response?.status === 400) {
           errorMessage = "Invalid request. Please check your message and try again.";
         } else if (error.response?.status === 403) {
-          errorMessage = "API key issue. Please check the configuration.";
+          errorMessage = "API authentication issue. Please contact support.";
         } else if (error.response?.status === 429) {
           errorMessage = "Rate limit exceeded. Please wait a moment before trying again.";
           setIsRateLimited(true);
