@@ -248,7 +248,9 @@ function App() {
         
         // Auto-scroll during typing
         const resBody = document.getElementById('main');
-        resBody.scrollTop = resBody.scrollHeight;
+        if (resBody) {
+          resBody.scrollTop = resBody.scrollHeight;
+        }
       } else {
         // Typing completed - reset all states
         setIsPrinting(false);
@@ -276,6 +278,7 @@ function App() {
   function showLoadingMessage() {
     const chatBody = document.getElementById('main');
     if (!chatBody) return; // Safety check
+    
     const loadingElement = document.createElement('div');
     loadingElement.className = 'bot-response loading-message';
     loadingElement.id = 'loading-message';
@@ -315,6 +318,8 @@ function App() {
 
   function showRetryButton() {
     const chatBody = document.getElementById('main');
+    if (!chatBody) return; // Safety check
+    
     const retryContainer = document.createElement('div');
     retryContainer.className = 'retry-container';
     retryContainer.innerHTML = `
@@ -367,6 +372,8 @@ function App() {
 
   const startNewChat = () => {
     const chatBody = document.getElementById('main');
+    if (!chatBody) return; // Safety check
+    
     // Clear all messages except the start message
     chatBody.innerHTML = '<span class="start-message">Hello! How can I help you today?</span>';
     // Reset states
@@ -396,6 +403,8 @@ function App() {
     
     // Stop any active typewriter effects
     const chatBody = document.getElementById('main');
+    if (!chatBody) return; // Safety check
+    
     const responses = chatBody.querySelectorAll('.bot-response');
     responses.forEach(response => {
       if (response._abortTypewriter) {
