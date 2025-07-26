@@ -7,13 +7,13 @@
 3. Add these variables (WITHOUT the VITE_ prefix for security):
 
 ```
-GEMINI_API_URL = https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+GEMINI_API_URL = [COPY_FROM_YOUR_ENV_FILE]
 GEMINI_API_KEY = [GET_FROM_YOUR_ENV_FILE]
 ```
 
 ⚠️ **IMPORTANT SECURITY NOTE**: 
 - Use `GEMINI_API_KEY` (NOT `VITE_GEMINI_API_KEY`) to keep the API key server-side only
-- Replace `[GET_FROM_YOUR_ENV_FILE]` with your actual API key from your local `.env` file
+- Copy both values from your local `.env` file
 - The app now uses a Netlify serverless function to securely handle API calls
 
 ## Deployment Steps

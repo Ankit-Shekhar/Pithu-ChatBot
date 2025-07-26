@@ -7,16 +7,17 @@ Your app isn't loading on Netlify because of missing environment variables and s
 1. **Go to your Netlify dashboard**: https://app.netlify.com/
 2. **Select your deployed site** (Pithu-ChatBot)
 3. **Go to Site settings** → **Environment variables**
-4. **Add these variables** (NOTE: No VITE_ prefix for security):
+4. **Add these variables (UPDATED FOR SECURITY)**:
 
 ```
-GEMINI_API_URL = https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+GEMINI_API_URL = [COPY_FROM_YOUR_ENV_FILE]
 GEMINI_API_KEY = [YOUR_ACTUAL_API_KEY_HERE]
 ```
 
-⚠️ **IMPORTANT**: 
-- Replace `[YOUR_ACTUAL_API_KEY_HERE]` with your real Google Gemini API key from your `.env` file.
-- Notice we removed the `VITE_` prefix for security - the API key will now be server-side only.
+⚠️ **CRITICAL SECURITY UPDATE**: 
+- Use `GEMINI_API_KEY` (NOT `VITE_GEMINI_API_KEY`) to keep the API key server-side only
+- Copy both values from your local `.env` file
+- The app now uses a Netlify serverless function for secure API handling
 
 ## 🔄 Step 2: Redeploy Your Site
 

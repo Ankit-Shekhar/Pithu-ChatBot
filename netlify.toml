@@ -10,6 +10,5 @@
 
 [build.environment]
   NODE_VERSION = "18"
-
-# Security: Disable secrets scanning for specific paths if needed
-# SECRETS_SCAN_OMIT_PATHS = "dist/**"
+  # Disable secrets scanning for documentation files
+  SECRETS_SCAN_OMIT_PATHS = "*.md,NETLIFY_*.md"
