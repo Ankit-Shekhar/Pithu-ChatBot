@@ -11,8 +11,10 @@ Your app isn't loading on Netlify because of missing environment variables and s
 
 ```
 VITE_GEMINI_API_URL = https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
-VITE_GEMINI_API_KEY = AIzaSyA6yHe70GjZOAZfm6Ctvs6iTCQTK0qGBKI
+VITE_GEMINI_API_KEY = [YOUR_ACTUAL_API_KEY_HERE]
 ```
+
+⚠️ **IMPORTANT**: Replace `[YOUR_ACTUAL_API_KEY_HERE]` with your real Google Gemini API key from your `.env` file.
 
 ## 🔄 Step 2: Redeploy Your Site
 
