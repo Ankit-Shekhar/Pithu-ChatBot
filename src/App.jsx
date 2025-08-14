@@ -425,6 +425,23 @@ function App() {
     
     chatBody.scrollTop = chatBody.scrollHeight;
   };
+
+  // Ensure chat scrolls to bottom on mount and when viewport changes (keyboard)
+  useEffect(() => {
+    const scrollToBottom = () => {
+      const resBody = document.getElementById('main');
+      if (resBody) resBody.scrollTop = resBody.scrollHeight;
+    };
+    scrollToBottom();
+
+    const onResize = () => {
+      // Delay to allow keyboard animation
+      setTimeout(scrollToBottom, 150);
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   return (
     <>
       {/* Removed flag icon */}
@@ -458,6 +475,13 @@ function App() {
             rows="1" 
             id="chatInput" 
             placeholder="Ask me anything..."
+            onFocus={() => {
+              // Scroll input into view when keyboard opens
+              setTimeout(() => {
+                const el = document.getElementById('chatInput');
+                el?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+              }, 150);
+            }}
             style={{ minHeight: '48px', maxHeight: '120px' }}
           />
           {(isLoading || isPrinting) ? (

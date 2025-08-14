@@ -28,6 +28,13 @@
   transform: none;
 }
 
+/* Prefer dynamic viewport height on mobile */
+@supports (height: 100dvh) {
+  .chatbotBody {
+    height: 100dvh;
+  }
+}
+
 /* Header Styling */
 .header {
   background: linear-gradient(135deg, #60a5fa 0%, #6366f1 100%);
@@ -93,7 +100,7 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-/* Chat Area - use viewport height instead of fixed 600px */
+/* Chat Area - let flexbox size it; remove fixed vh calc */
 .main {
   background: #ffffff;
   padding: 20px;
@@ -103,9 +110,20 @@
   flex-direction: column;
   gap: 15px;
   scroll-behavior: smooth;
-  height: calc(100vh - 80px - 80px); /* header (80) + footer (80) */
-  flex-shrink: 1;
-  flex-grow: 1;
+  height: auto;
+  flex: 1 1 auto;
+  min-height: 0; /* allow flex child to shrink and scroll */
+  scroll-padding-bottom: 96px; /* avoid last message hidden under footer */
+  overscroll-behavior: contain;
+  z-index: 1;
+}
+
+/* Mobile tweaks: reduce header height to free space */
+@media (max-width: 768px) {
+  .header {
+    height: 56px;
+    padding: 10px 14px;
+  }
 }
 
 .main::-webkit-scrollbar {
@@ -137,6 +155,8 @@
   box-sizing: border-box;
   margin-bottom: 0; /* remove extra bottom gap */
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0) + 12px);
 }
 
 #chatInput {
@@ -149,7 +169,7 @@
   border-radius: 25px;
   resize: none;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 16px;
   backdrop-filter: blur(10px);
   border: 1px solid #e5e7eb;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
