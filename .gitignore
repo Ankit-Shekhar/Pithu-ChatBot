@@ -9,7 +9,8 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
-.env.example
+# Keep template tracked
+!.env.example
 
 # Editor directories and files
 .vscode/*
