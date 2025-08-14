@@ -214,21 +214,20 @@ function App() {
 
   function typewriterEffect(text, element) {
     let i = 0;
-    const speed = 20; // milliseconds per character
+    const speed = 1; // milliseconds per tick (very fast)
+    const chunk = Math.max(50, Math.ceil(text.length / 10)); // print big chunks
     element.innerHTML = ''; // Clear content first
     let isAborted = false; // Local flag to track if this specific typewriter was aborted
     
     const type = () => {
-      // Check if printing was aborted
       if (printingAborted || isAborted) {
-        // If printing was aborted, stop immediately
         isAborted = true;
         return;
       }
       
       if (i < text.length) {
-        element.innerHTML = text.substring(0, i + 1);
-        i++;
+        element.innerHTML = text.substring(0, i + chunk);
+        i += chunk;
         setTimeout(type, speed);
         
         // Auto-scroll during typing
@@ -331,6 +330,9 @@ function App() {
       sendMessage();
       generateAnswer();
       setQuestion(''); // Clear the input after sending
+      // Reset input height back to original after sending
+      const textarea = document.getElementById('chatInput');
+      if (textarea) textarea.style.height = '48px';
     }
   };
 
@@ -372,6 +374,9 @@ function App() {
       abortController.abort();
       setAbortController(null);
     }
+    // Reset input height back to original
+    const textarea = document.getElementById('chatInput');
+    if (textarea) textarea.style.height = '48px';
   };
 
   const stopLoading = () => {
@@ -422,9 +427,10 @@ function App() {
   };
   return (
     <>
-    <img id='flag' src="https://th.bing.com/th/id/R.2c0f2c2680c5440abab5e5e1bdbbfd28?rik=BZwWQO34B9FUEA&riu=http%3a%2f%2fwww.moud.in%2fmoudinternal%2fimages%2femblem.png&ehk=g7PpwwrbioveHPpP6%2bcJbBxZY40jhof%2bxM%2bqoqVD3Mg%3d&risl=&pid=ImgRaw&r=0" alt="" onClick={toggleChatbot} />
-      <button className='chatbot-button' onClick={toggleChatbot}></button>
-      <div className='chatbotBody'>
+      {/* Removed flag icon */}
+      {/* <img id='flag' src="https://th.bing.com/th/id/R.2c0f2c2680c5440abab5e5e1bdbbfd28?rik=BZwWQO34B9FUEA&riu=http%3a%2f%2fwww.moud.in%2fmoudinternal%2fimages%2femblem.png&ehk=g7PpwwrbioveHPpP6%2bcJbBxZY40jhof%2bxM%2bqoqVD3Mg%3d&risl=&pid=ImgRaw&r=0" alt="" /> */}
+      {/* <button className='chatbot-button' onClick={toggleChatbot}></button> */}
+      <div className='chatbotBody open'>
         <div className='header'>
           <div className='header-content'>
             <div className='header-text'>

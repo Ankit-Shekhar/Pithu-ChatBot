@@ -1,6 +1,6 @@
-const axios = require('axios');
+import axios from 'axios';
 
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   // Enable CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -28,7 +28,7 @@ exports.handler = async (event, context) => {
 
   try {
     // Parse the request body
-    const { question } = JSON.parse(event.body);
+    const { question } = JSON.parse(event.body || '{}');
 
     if (!question || typeof question !== 'string') {
       return {
@@ -68,13 +68,13 @@ exports.handler = async (event, context) => {
     // Extract the response text
     if (response?.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
       const responseText = response.data.candidates[0].content.parts[0].text;
-      
+
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           success: true,
-          response: responseText 
+          response: responseText,
         }),
       };
     } else {
@@ -85,15 +85,14 @@ exports.handler = async (event, context) => {
         body: JSON.stringify({ error: 'Invalid response from AI service' }),
       };
     }
-
   } catch (error) {
     console.error('Error in Gemini function:', error.message);
-    
+
     // Handle different types of errors
     if (error.response) {
       const status = error.response.status;
       let errorMessage = 'AI service error';
-      
+
       if (status === 400) {
         errorMessage = 'Invalid request format';
       } else if (status === 403) {
@@ -103,14 +102,14 @@ exports.handler = async (event, context) => {
       } else if (status >= 500) {
         errorMessage = 'AI service temporarily unavailable';
       }
-      
+
       return {
         statusCode: status,
         headers,
         body: JSON.stringify({ error: errorMessage }),
       };
     }
-    
+
     return {
       statusCode: 500,
       headers,

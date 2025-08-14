@@ -12,3 +12,6 @@
   NODE_VERSION = "18"
   # Disable secrets scanning for documentation files
   SECRETS_SCAN_OMIT_PATHS = "*.md,NETLIFY_*.md"
+
+[functions]
+  node_bundler = "esbuild"
