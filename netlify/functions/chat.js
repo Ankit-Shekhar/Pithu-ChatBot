@@ -38,12 +38,13 @@ export const handler = async (event, context) => {
       };
     }
 
-    // Get environment variables (server-side only, secure)
-    const apiUrl = process.env.GEMINI_API_URL;
+    // Use default API URL if not provided via env
+    const defaultApiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+    const apiUrl = process.env.GEMINI_API_URL || defaultApiUrl;
     const apiKey = process.env.GEMINI_API_KEY;
 
-    if (!apiUrl || !apiKey) {
-      console.error('Missing environment variables');
+    if (!apiKey) {
+      console.error('Missing GEMINI_API_KEY environment variable');
       return {
         statusCode: 500,
         headers,

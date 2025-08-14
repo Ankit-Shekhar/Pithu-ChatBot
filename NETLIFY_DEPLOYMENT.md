@@ -4,17 +4,16 @@
 
 1. Go to your Netlify dashboard
 2. Navigate to: Site settings > Environment variables
-3. Add these variables (WITHOUT the VITE_ prefix for security):
+3. Add this variable (WITHOUT the VITE_ prefix for security):
 
 ```
-GEMINI_API_URL = [COPY_FROM_YOUR_ENV_FILE]
-GEMINI_API_KEY = [GET_FROM_YOUR_ENV_FILE]
+GEMINI_API_KEY = [YOUR_GEMINI_API_KEY]
 ```
 
 ⚠️ **IMPORTANT SECURITY NOTE**: 
 - Use `GEMINI_API_KEY` (NOT `VITE_GEMINI_API_KEY`) to keep the API key server-side only
-- Copy both values from your local `.env` file
-- The app now uses a Netlify serverless function to securely handle API calls
+- Do not add GEMINI_API_URL; the function uses a safe default
+- The app uses a Netlify serverless function to securely handle API calls
 
 ## Deployment Steps
 
@@ -26,14 +25,13 @@ GEMINI_API_KEY = [GET_FROM_YOUR_ENV_FILE]
    ```
 
 2. **In Netlify Dashboard:**
-   - Go to "Site configuration" > "Build & deploy"
-   - Build command should be: `npm run build`
-   - Publish directory should be: `dist`
-   - Node version: `18` (set in Environment variables)
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+   - Functions directory: `netlify/functions`
+   - Node version: `18`
 
 3. **Trigger new deployment:**
-   - Go to "Deploys" tab
-   - Click "Trigger deploy" > "Deploy site"
+   - Go to Deploys tab and trigger a deploy
 
 ## Troubleshooting
 

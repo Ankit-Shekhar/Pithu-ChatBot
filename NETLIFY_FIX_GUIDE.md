@@ -10,7 +10,6 @@ Your app isn't loading on Netlify because of missing environment variables and s
 4. **Add these variables (UPDATED FOR SECURITY)**:
 
 ```
-GEMINI_API_URL = [COPY_FROM_YOUR_ENV_FILE]
 GEMINI_API_KEY = [YOUR_ACTUAL_API_KEY_HERE]
 ```
 
@@ -79,5 +78,24 @@ Once fixed, test these features:
 - Responsive design works ✅
 
 ---
+
+# Netlify Secrets Scan Fix Guide
+
+If Netlify builds fail due to secrets scanning:
+
+1. Use placeholders in `.env.example` (no real values)
+2. Exclude `.env.example` from secrets scan via `SECRETS_SCAN_OMIT_PATHS` in `netlify.toml`
+3. Only set `GEMINI_API_KEY` in the Netlify UI; the function uses a safe default URL
+
+Example env template:
+```
+GEMINI_API_KEY="<REPLACE_WITH_YOUR_GEMINI_API_KEY>"
+```
+
+netlify.toml snippet:
+```
+[build.environment]
+  SECRETS_SCAN_OMIT_PATHS = "*.md,NETLIFY_*.md,.env.example"
+```
 
 **Next Steps**: Push the safety fixes to GitHub and redeploy!
