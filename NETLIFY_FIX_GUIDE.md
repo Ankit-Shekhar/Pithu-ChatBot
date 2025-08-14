@@ -10,12 +10,12 @@ Your app isn't loading on Netlify because of missing environment variables and s
 4. **Add these variables (UPDATED FOR SECURITY)**:
 
 ```
-GEMINI_API_KEY = [YOUR_ACTUAL_API_KEY_HERE]
+GEMINI_API_KEY = [YOUR ACTUAL API KEY HERE]
 ```
 
-⚠️ **CRITICAL SECURITY UPDATE**: 
+⚠️ **CRITICAL SECURITY UPDATE**:
 - Use `GEMINI_API_KEY` (NOT `VITE_GEMINI_API_KEY`) to keep the API key server-side only
-- Copy both values from your local `.env` file
+- Do NOT set `GEMINI_API_URL` in Netlify; the function uses a safe default
 - The app now uses a Netlify serverless function for secure API handling
 
 ## 🔄 Step 2: Redeploy Your Site

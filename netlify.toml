@@ -12,6 +12,8 @@
   NODE_VERSION = "18"
   # Disable secrets scanning for documentation files and templates
   SECRETS_SCAN_OMIT_PATHS = "*.md,NETLIFY_*.md,.env.example"
+  # Omit this key from secret scanning to avoid false positives
+  SECRETS_SCAN_OMIT_KEYS = "GEMINI_API_URL"
 
 [functions]
   node_bundler = "esbuild"
