@@ -38,6 +38,11 @@ function App() {
   };
 
   async function generateAnswer() {
+    if (isRateLimited) {
+      setAnswer('Rate limit exceeded. Please wait a moment and try again.');
+      return;
+    }
+
     // Rate limiting - prevent requests too close together
     const now = Date.now();
     const timeSinceLastRequest = now - lastRequestTime;
@@ -114,12 +119,23 @@ function App() {
             ? `Gemini rejected the request: ${serverDetails}`
             : "Gemini rejected the request (403). Check your API key restrictions and enabled APIs.";
         } else if (error.response?.status === 429) {
-          errorMessage = "Rate limit exceeded. Please wait a moment before trying again.";
-          setIsRateLimited(true);
-          // Auto-retry after 10 seconds
-          setTimeout(() => {
-            setIsRateLimited(false);
-          }, 10000);
+            const retryAfterSecondsRaw = error.response?.data?.retryAfterSeconds;
+            const retryAfterSeconds =
+              typeof retryAfterSecondsRaw === 'number'
+                ? retryAfterSecondsRaw
+                : retryAfterSecondsRaw
+                  ? Number(retryAfterSecondsRaw)
+                  : undefined;
+
+            const waitSeconds = Number.isFinite(retryAfterSeconds)
+              ? Math.max(1, Math.ceil(retryAfterSeconds))
+              : 30;
+
+            errorMessage = `Rate limit exceeded. Please try again in ${waitSeconds} seconds.`;
+            setIsRateLimited(true);
+            setTimeout(() => {
+              setIsRateLimited(false);
+            }, waitSeconds * 1000);
         } else if (error.response?.status >= 500) {
           errorMessage = "Server error. Please try again later.";
         }

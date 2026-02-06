@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { createHash } from 'crypto';
 
 export const handler = async (event, context) => {
   // Enable CORS
@@ -66,6 +67,10 @@ export const handler = async (event, context) => {
         body: JSON.stringify({ error: 'Server configuration error' }),
       };
     }
+
+    // Log a non-reversible fingerprint so you can verify which key Netlify is using.
+    const apiKeyFingerprint = createHash('sha256').update(apiKey).digest('hex').slice(0, 8);
+    console.log(`Gemini key fingerprint: ${apiKeyFingerprint}`);
 
     // If a custom model/url is configured, try it first, but still fall back to known-good
     // public models. This helps when a model is not enabled for the project/key yet.
@@ -156,13 +161,29 @@ export const handler = async (event, context) => {
         upstreamMessage ||
         (error.response?.data ? JSON.stringify(error.response.data) : undefined);
 
+      let retryAfterSeconds;
+      if (status === 429 && typeof upstreamData === 'string') {
+        const match = upstreamData.match(/Please retry in\s+([0-9.]+)s\./i);
+        if (match?.[1]) {
+          retryAfterSeconds = Number.parseFloat(match[1]);
+          if (!Number.isFinite(retryAfterSeconds)) retryAfterSeconds = undefined;
+        }
+      }
+
+      const responseHeaders = { ...headers };
+      if (typeof retryAfterSeconds === 'number') {
+        // Use integer seconds for standard Retry-After header.
+        responseHeaders['Retry-After'] = String(Math.max(1, Math.ceil(retryAfterSeconds)));
+      }
+
       return {
         statusCode: status,
-        headers,
+        headers: responseHeaders,
         body: JSON.stringify({
           error: errorMessage,
           details: upstreamData,
           model: lastTriedModel,
+          retryAfterSeconds,
         }),
       };
     }
