@@ -4,7 +4,7 @@ export const handler = async (event, context) => {
   // Enable CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
   };
 
@@ -26,6 +26,17 @@ export const handler = async (event, context) => {
     };
   }
 
+  const buildGeminiUrl = (baseUrl, apiKey) => {
+    const url = new URL(baseUrl);
+    const existingKey = url.searchParams.get('key');
+    if (!existingKey) {
+      url.searchParams.set('key', apiKey);
+    }
+    return url.toString();
+  };
+
+  let lastTriedModel;
+
   try {
     // Parse the request body
     const { question } = JSON.parse(event.body || '{}');
@@ -38,9 +49,13 @@ export const handler = async (event, context) => {
       };
     }
 
-    // Use default API URL if not provided via env
-    const defaultApiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-    const apiUrl = process.env.GEMINI_API_URL || defaultApiUrl;
+    // Note: The Generative Language API expects the API key as a query parameter (?key=...)
+    // in many environments; header-based keys can yield 403 depending on project restrictions.
+    const defaultApiUrl =
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+    const fallbackApiUrl =
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+    const envApiUrl = process.env.GEMINI_API_URL;
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
@@ -52,19 +67,46 @@ export const handler = async (event, context) => {
       };
     }
 
-    // Make the API request to Google Gemini
-    const response = await axios({
-      url: apiUrl,
-      method: 'POST',
-      data: {
-        contents: [{ parts: [{ text: question }] }],
-      },
-      timeout: 30000,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-goog-api-key': apiKey,
-      },
-    });
+    // If a custom model/url is configured, try it first, but still fall back to known-good
+    // public models. This helps when a model is not enabled for the project/key yet.
+    const apiUrlsToTry = envApiUrl
+      ? [envApiUrl, defaultApiUrl, fallbackApiUrl]
+      : [defaultApiUrl, fallbackApiUrl];
+
+    let response;
+    let usedApiUrl;
+
+    for (const candidateUrl of apiUrlsToTry) {
+      usedApiUrl = candidateUrl;
+      lastTriedModel = candidateUrl;
+      try {
+        const finalUrl = buildGeminiUrl(candidateUrl, apiKey);
+
+        response = await axios({
+          url: finalUrl,
+          method: 'POST',
+          data: {
+            contents: [{ role: 'user', parts: [{ text: question }] }],
+          },
+          timeout: 30000,
+          headers: {
+            'Content-Type': 'application/json',
+            // Keep for compatibility; some projects accept header keys too.
+            'x-goog-api-key': apiKey,
+          },
+        });
+        break;
+      } catch (error) {
+        const status = error?.response?.status;
+        // If the requested model isn't available to this key/project, Gemini can respond
+        // with 403/404. In that case, try the fallback model (if configured).
+        const shouldTryNext = (status === 403 || status === 404) && candidateUrl !== apiUrlsToTry[apiUrlsToTry.length - 1];
+        if (shouldTryNext) {
+          continue;
+        }
+        throw error;
+      }
+    }
 
     // Extract the response text
     if (response?.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
@@ -76,6 +118,7 @@ export const handler = async (event, context) => {
         body: JSON.stringify({
           success: true,
           response: responseText,
+          model: usedApiUrl,
         }),
       };
     } else {
@@ -104,10 +147,23 @@ export const handler = async (event, context) => {
         errorMessage = 'AI service temporarily unavailable';
       }
 
+      const upstreamMessage =
+        error.response?.data?.error?.message ||
+        error.response?.data?.message ||
+        (typeof error.response?.data === 'string' ? error.response.data : undefined);
+
+      const upstreamData =
+        upstreamMessage ||
+        (error.response?.data ? JSON.stringify(error.response.data) : undefined);
+
       return {
         statusCode: status,
         headers,
-        body: JSON.stringify({ error: errorMessage }),
+        body: JSON.stringify({
+          error: errorMessage,
+          details: upstreamData,
+          model: lastTriedModel,
+        }),
       };
     }
 

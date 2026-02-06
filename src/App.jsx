@@ -99,11 +99,20 @@ function App() {
         console.error('Error status:', error.response?.status);
         console.error('Error data:', error.response?.data);
         
+        const serverDetailsRaw = error.response?.data?.details;
+        const serverDetails =
+          typeof serverDetailsRaw === 'string'
+            ? serverDetailsRaw
+            : serverDetailsRaw
+              ? JSON.stringify(serverDetailsRaw)
+              : undefined;
         let errorMessage = "Sorry, I encountered an error. Please try again.";
         if (error.response?.status === 400) {
           errorMessage = "Invalid request. Please check your message and try again.";
         } else if (error.response?.status === 403) {
-          errorMessage = "API authentication issue. Please contact support.";
+          errorMessage = serverDetails
+            ? `Gemini rejected the request: ${serverDetails}`
+            : "Gemini rejected the request (403). Check your API key restrictions and enabled APIs.";
         } else if (error.response?.status === 429) {
           errorMessage = "Rate limit exceeded. Please wait a moment before trying again.";
           setIsRateLimited(true);
