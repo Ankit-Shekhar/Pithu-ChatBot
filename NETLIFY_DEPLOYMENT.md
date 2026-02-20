@@ -7,12 +7,12 @@
 3. Add this variable (WITHOUT the VITE_ prefix for security):
 
 ```
-GEMINI_API_KEY = [YOUR_GEMINI_API_KEY]
+HF_TOKEN = [YOUR_HUGGING_FACE_INFERENCE_TOKEN]
 ```
 
 ⚠️ **IMPORTANT SECURITY NOTE**: 
-- Use `GEMINI_API_KEY` (NOT `VITE_GEMINI_API_KEY`) to keep the API key server-side only
-- Do not add GEMINI_API_URL; the function uses a safe default
+- Use `HF_TOKEN` (NOT `VITE_HF_TOKEN`) to keep the token server-side only
+- The Netlify function now talks to the Hugging Face Inference API, so no external URL needs to be set
 - The app uses a Netlify serverless function to securely handle API calls
 
 ## Deployment Steps

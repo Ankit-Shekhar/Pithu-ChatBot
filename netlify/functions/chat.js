@@ -1,197 +1,95 @@
-import axios from 'axios';
-import { createHash } from 'crypto';
+import { InferenceClient } from '@huggingface/inference';
 
-export const handler = async (event, context) => {
-  // Enable CORS
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  };
+// CORS headers should stay consistent for Netlify
+const headers = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 
-  // Handle preflight requests
+const hfToken = process.env.HF_TOKEN;
+const client = hfToken ? new InferenceClient(hfToken) : null;
+
+const createErrorResponse = (status, message, details) => ({
+  statusCode: status,
+  headers,
+  body: JSON.stringify({ error: message, details }),
+});
+
+const extractMessageText = (message) => {
+  if (!message) return '';
+  if (typeof message === 'string') return message;
+  const content = message.content ?? message.text ?? '';
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => {
+        if (typeof part === 'string') return part;
+        return part?.text ?? '';
+      })
+      .join('');
+  }
+  return '';
+};
+
+export const handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: '',
-    };
+    return { statusCode: 200, headers, body: '' };
   }
 
-  // Only allow POST requests
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: 'Method not allowed' }),
-    };
+    return createErrorResponse(405, 'Method not allowed');
   }
 
-  const buildGeminiUrl = (baseUrl, apiKey) => {
-    const url = new URL(baseUrl);
-    const existingKey = url.searchParams.get('key');
-    if (!existingKey) {
-      url.searchParams.set('key', apiKey);
-    }
-    return url.toString();
-  };
-
-  let lastTriedModel;
+  if (!client || !hfToken) {
+    console.error('Missing Hugging Face token');
+    return createErrorResponse(500, 'Server is not configured with the Hugging Face token');
+  }
 
   try {
-    // Parse the request body
     const { question } = JSON.parse(event.body || '{}');
 
     if (!question || typeof question !== 'string') {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Question is required and must be a string' }),
-      };
+      return createErrorResponse(400, 'Question is required and must be a string');
     }
 
-    // Note: The Generative Language API expects the API key as a query parameter (?key=...)
-    // in many environments; header-based keys can yield 403 depending on project restrictions.
-    const defaultApiUrl =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-    const fallbackApiUrl =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
-    const envApiUrl = process.env.GEMINI_API_URL;
-    const apiKey = process.env.GEMINI_API_KEY;
+    const completion = await client.chatCompletion({
+      model: 'openai/gpt-oss-20b:groq',
+      messages: [{ role: 'user', content: question }],
+    });
 
-    if (!apiKey) {
-      console.error('Missing GEMINI_API_KEY environment variable');
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ error: 'Server configuration error' }),
-      };
-    }
+    const responseText = extractMessageText(completion?.choices?.[0]?.message);
 
-    // Log a non-reversible fingerprint so you can verify which key Netlify is using.
-    const apiKeyFingerprint = createHash('sha256').update(apiKey).digest('hex').slice(0, 8);
-    console.log(`Gemini key fingerprint: ${apiKeyFingerprint}`);
-
-    // If a custom model/url is configured, try it first, but still fall back to known-good
-    // public models. This helps when a model is not enabled for the project/key yet.
-    const apiUrlsToTry = envApiUrl
-      ? [envApiUrl, defaultApiUrl, fallbackApiUrl]
-      : [defaultApiUrl, fallbackApiUrl];
-
-    let response;
-    let usedApiUrl;
-
-    for (const candidateUrl of apiUrlsToTry) {
-      usedApiUrl = candidateUrl;
-      lastTriedModel = candidateUrl;
-      try {
-        const finalUrl = buildGeminiUrl(candidateUrl, apiKey);
-
-        response = await axios({
-          url: finalUrl,
-          method: 'POST',
-          data: {
-            contents: [{ role: 'user', parts: [{ text: question }] }],
-          },
-          timeout: 30000,
-          headers: {
-            'Content-Type': 'application/json',
-            // Keep for compatibility; some projects accept header keys too.
-            'x-goog-api-key': apiKey,
-          },
-        });
-        break;
-      } catch (error) {
-        const status = error?.response?.status;
-        // If the requested model isn't available to this key/project, Gemini can respond
-        // with 403/404. In that case, try the fallback model (if configured).
-        const shouldTryNext = (status === 403 || status === 404) && candidateUrl !== apiUrlsToTry[apiUrlsToTry.length - 1];
-        if (shouldTryNext) {
-          continue;
-        }
-        throw error;
-      }
-    }
-
-    // Extract the response text
-    if (response?.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-      const responseText = response.data.candidates[0].content.parts[0].text;
-
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          response: responseText,
-          model: usedApiUrl,
-        }),
-      };
-    } else {
-      console.error('Invalid response structure:', response.data);
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ error: 'Invalid response from AI service' }),
-      };
-    }
-  } catch (error) {
-    console.error('Error in Gemini function:', error.message);
-
-    // Handle different types of errors
-    if (error.response) {
-      const status = error.response.status;
-      let errorMessage = 'AI service error';
-
-      if (status === 400) {
-        errorMessage = 'Invalid request format';
-      } else if (status === 403) {
-        errorMessage = 'API authentication failed';
-      } else if (status === 429) {
-        errorMessage = 'Rate limit exceeded. Please try again later.';
-      } else if (status >= 500) {
-        errorMessage = 'AI service temporarily unavailable';
-      }
-
-      const upstreamMessage =
-        error.response?.data?.error?.message ||
-        error.response?.data?.message ||
-        (typeof error.response?.data === 'string' ? error.response.data : undefined);
-
-      const upstreamData =
-        upstreamMessage ||
-        (error.response?.data ? JSON.stringify(error.response.data) : undefined);
-
-      let retryAfterSeconds;
-      if (status === 429 && typeof upstreamData === 'string') {
-        const match = upstreamData.match(/Please retry in\s+([0-9.]+)s\./i);
-        if (match?.[1]) {
-          retryAfterSeconds = Number.parseFloat(match[1]);
-          if (!Number.isFinite(retryAfterSeconds)) retryAfterSeconds = undefined;
-        }
-      }
-
-      const responseHeaders = { ...headers };
-      if (typeof retryAfterSeconds === 'number') {
-        // Use integer seconds for standard Retry-After header.
-        responseHeaders['Retry-After'] = String(Math.max(1, Math.ceil(retryAfterSeconds)));
-      }
-
-      return {
-        statusCode: status,
-        headers: responseHeaders,
-        body: JSON.stringify({
-          error: errorMessage,
-          details: upstreamData,
-          model: lastTriedModel,
-          retryAfterSeconds,
-        }),
-      };
+    if (!responseText) {
+      console.error('Empty response from Hugging Face:', completion);
+      return createErrorResponse(502, 'AI service returned empty content');
     }
 
     return {
-      statusCode: 500,
+      statusCode: 200,
       headers,
-      body: JSON.stringify({ error: 'Internal server error' }),
+      body: JSON.stringify({ success: true, response: responseText }),
     };
+  } catch (error) {
+    console.error('Hugging Face function error:', error?.message ?? error);
+    const status = error?.response?.status ?? error?.status ?? 500;
+    let errorMessage = 'AI service error';
+
+    if (status === 400) {
+      errorMessage = 'Invalid request format';
+    } else if (status === 403) {
+      errorMessage = 'API authentication failed';
+    } else if (status === 429) {
+      errorMessage = 'Rate limit exceeded. Please try again later.';
+    } else if (status >= 500) {
+      errorMessage = 'API service temporarily unavailable';
+    }
+
+    const upstreamMessage =
+      error?.response?.data?.error?.message ||
+      error?.response?.data?.message ||
+      (typeof error?.response?.data === 'string' ? error?.response?.data : undefined);
+
+    return createErrorResponse(status, errorMessage, upstreamMessage);
   }
 };

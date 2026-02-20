@@ -10,12 +10,12 @@ Your app isn't loading on Netlify because of missing environment variables and s
 4. **Add these variables (UPDATED FOR SECURITY)**:
 
 ```
-GEMINI_API_KEY = [YOUR ACTUAL API KEY HERE]
+HF_TOKEN = [YOUR ACTUAL HUGGING FACE TOKEN]
 ```
 
 ⚠️ **CRITICAL SECURITY UPDATE**:
-- Use `GEMINI_API_KEY` (NOT `VITE_GEMINI_API_KEY`) to keep the API key server-side only
-- Do NOT set `GEMINI_API_URL` in Netlify; the function uses a safe default
+- Use `HF_TOKEN` (NOT `VITE_HF_TOKEN`) to keep the token server-side only
+- Do NOT add any external API URL; the function handles huggingface internally
 - The app now uses a Netlify serverless function for secure API handling
 
 ## 🔄 Step 2: Redeploy Your Site
@@ -85,11 +85,11 @@ If Netlify builds fail due to secrets scanning:
 
 1. Use placeholders in `.env.example` (no real values)
 2. Exclude `.env.example` from secrets scan via `SECRETS_SCAN_OMIT_PATHS` in `netlify.toml`
-3. Only set `GEMINI_API_KEY` in the Netlify UI; the function uses a safe default URL
+3. Only set `HF_TOKEN` in the Netlify UI; the function handles the Hugging Face endpoint internally
 
 Example env template:
 ```
-GEMINI_API_KEY="<REPLACE_WITH_YOUR_GEMINI_API_KEY>"
+HF_TOKEN="<REPLACE_WITH_YOUR_HUGGING_FACE_TOKEN>"
 ```
 
 netlify.toml snippet:

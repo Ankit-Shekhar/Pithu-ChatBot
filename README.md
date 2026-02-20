@@ -1,10 +1,10 @@
 # Pithu AI Chatbot
 
-A modern, responsive AI chatbot built with React and Google Gemini API featuring glassmorphism design, dark mode, and advanced conversation features.
+A modern, responsive AI chatbot built with React and the Hugging Face Inference API (openai/gpt-oss-20b:groq) featuring glassmorphism design, dark mode, and advanced conversation features.
 
 ## ✨ Features
 
-- 🤖 **AI-Powered**: Integrated with Google Gemini 2.0 Flash API
+- 🤖 **AI-Powered**: Integrated with Hugging Face Inference API (openai/gpt-oss-20b:groq)
 - 🎨 **Modern UI**: Beautiful glassmorphism design with smooth animations
 - 🌙 **Dark Mode**: Toggle between light and dark themes
 - ⏸️ **Stop/Resume**: Ability to stop API calls and response printing
@@ -17,7 +17,7 @@ A modern, responsive AI chatbot built with React and Google Gemini API featuring
 - **Vite** - Build tool and dev server
 - **Axios** - HTTP client for API calls
 - **CSS3** - Styling with glassmorphism effects
-- **Google Gemini API** - AI language model
+- **Hugging Face Inference API** - AI language model (openai/gpt-oss-20b:groq)
 
 ## 📝 Available Scripts
 

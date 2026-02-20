@@ -116,8 +116,8 @@ function App() {
           errorMessage = "Invalid request. Please check your message and try again.";
         } else if (error.response?.status === 403) {
           errorMessage = serverDetails
-            ? `Gemini rejected the request: ${serverDetails}`
-            : "Gemini rejected the request (403). Check your API key restrictions and enabled APIs.";
+            ? `AI service rejected the request: ${serverDetails}`
+            : "Access to the AI service was denied (403). Check your token, permissions, and model availability.";
         } else if (error.response?.status === 429) {
             const retryAfterSecondsRaw = error.response?.data?.retryAfterSeconds;
             const retryAfterSeconds =
